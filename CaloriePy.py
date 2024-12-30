@@ -6,6 +6,7 @@ import seaborn as sns
 from sklearn.model_selection import train_test_split
 from xgboost import XGBRegressor
 from sklearn import metrics
+import joblib  # For saving and loading the trained model
 
 # Set up Streamlit page
 st.set_page_config(page_title="Calorie Prediction App", layout="centered")
@@ -40,12 +41,26 @@ with st.expander("Dataset Overview & Statistics"):
 X = calories_data.drop(columns=['User_ID', 'Calories'], axis=1)
 Y = calories_data['Calories']
 
-# Split into train and test sets
-X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=2)
+# Function to train and save the model
+@st.cache_resource
+def train_model():
+    model = XGBRegressor()
+    model.fit(X, Y)
+    # Save the trained model
+    joblib.dump(model, 'trained_model.pkl')
+    return model
 
-# Train XGBoost model
-model = XGBRegressor()
-model.fit(X_train, Y_train)
+# Load pre-trained model (if available) or train a new model
+def load_model():
+    try:
+        # Attempt to load the model from disk
+        model = joblib.load('trained_model.pkl')
+    except FileNotFoundError:
+        # If model is not found, retrain and save it
+        model = train_model()
+    return model
+
+model = load_model()
 
 # Charts for EDA
 with st.expander("Exploratory Data Analysis"):
@@ -56,20 +71,7 @@ with st.expander("Exploratory Data Analysis"):
 
     st.subheader("Age Distribution")
     fig, ax = plt.subplots()
-    sns.histplot(calories_data['Age'], kde=True, ax=ax, stat='density')
-
-    st.pyplot(fig)
-
-    st.subheader("Height Distribution")
-    fig, ax = plt.subplots()
-    sns.histplot(calories_data['Height'], kde=True, ax=ax, stat='density')
-
-    st.pyplot(fig)
-
-    st.subheader("Weight Distribution")
-    fig, ax = plt.subplots()
-    sns.histplot(calories_data['Weight'], kde=True, ax=ax, stat='density')
-
+    sns.histplot(calories_data['Age'], kde=True, ax=ax)
     st.pyplot(fig)
 
     st.subheader("Correlation Heatmap")
@@ -85,9 +87,9 @@ st.markdown("### Fill in the values below to see the predicted calories burned!"
 # Create the input form
 with st.form("calorie_form"):
     gender = st.selectbox("Gender", options=["Male", "Female"])
-    age = st.number_input("Age (years)", min_value=10, max_value=100, step=1)
-    height = st.number_input("Height (cm)", min_value=100.0, max_value=250.0, step=0.1)
-    weight = st.number_input("Weight (kg)", min_value=40.0, max_value=150.0, step=0.5)
+    age = st.number_input("Age (years)", min_value=1, max_value=100, step=1)
+    height = st.number_input("Height (cm)", min_value=50.0, max_value=250.0, step=0.1)
+    weight = st.number_input("Weight (kg)", min_value=10.0, max_value=200.0, step=0.1)
     duration = st.number_input("Duration (mins)", min_value=1.0, max_value=500.0, step=1.0)
     heart_rate = st.number_input("Heart Rate (bpm)", min_value=30.0, max_value=200.0, step=0.1)
     body_temp = st.number_input("Body Temperature (°C)", min_value=30.0, max_value=45.0, step=0.1)
