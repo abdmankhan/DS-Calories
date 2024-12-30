@@ -77,7 +77,7 @@ with st.expander("Exploratory Data Analysis"):
     st.subheader("Correlation Heatmap")
     correlation = calories_data.corr()
     fig, ax = plt.subplots(figsize=(10, 10))
-    sns.heatmap(correlation, cbar=True, square=True, fmt='.1f', annot=True, cmap='Blues', ax=ax)
+    sns.heatmap(correlation, cbar=True, square=True, fmt='.2f', annot=True, cmap='Blues', ax=ax)
     st.pyplot(fig)
 
 # Prediction form
